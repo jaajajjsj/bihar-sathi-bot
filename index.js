@@ -14,34 +14,38 @@ const AdmZip = require('adm-zip');
 const app = express();
 
 // ═════════════════════════════════════════════
-// 🟢 1. AUTO-UNZIPPER (LOGIN FIX)
+// 🟢 1. FORCE LOGIN RESET (THE FIX)
 // ═════════════════════════════════════════════
-
-
-
-
-// 🟢 FORCE UNZIP: Always unzip to ensure fresh session
 if (fs.existsSync('./auth_info_baileys.zip')) {
-    console.log("📦 Found Zip Session! Unzipping...");
+    console.log("🔄 Resetting Session...");
+    
+    // 1. Delete old/corrupt session folder if it exists
+    if (fs.existsSync('./auth_info_baileys')) {
+        fs.rmSync('./auth_info_baileys', { recursive: true, force: true });
+        console.log("🗑️ Old Session Deleted");
+    }
+
+    // 2. Unzip the fresh session
+    console.log("📦 Unzipping New Session...");
     const zip = new AdmZip('./auth_info_baileys.zip');
-    zip.extractAllTo('./', true);
-    console.log("✅ Unzip Complete! Starting Bot...");
+    zip.extractAllTo('./', true); 
+    console.log("✅ Session Updated Successfully!");
 }
 
 // ═════════════════════════════════════════════
-// 🟢 2. SERVER KEEPER (24/7)
+// 🟢 2. SERVER KEEPER (MAKES IT 24/7)
 // ═════════════════════════════════════════════
 const PORT = process.env.PORT || 3000;
-app.get('/', (req, res) => res.send('✅ Bihar Sathi Bot is Running (Expert + Anti-Crash Mode) 🚀'));
+app.get('/', (req, res) => res.send('✅ Bihar Sathi Bot is Running (Expert + Force Reset Mode) 🚀'));
 app.listen(PORT, () => console.log(`Server is keeping bot alive on port ${PORT}`));
 
 // ═════════════════════════════════════════════
-// ⚙️ CONFIGURATION
+// ⚙️ EXPERT CONFIGURATION
 // ═════════════════════════════════════════════
 const ADMIN_NUMBER = '919341434302@s.whatsapp.net'; 
 const UPI_ID = '7633832024';
 const SESSION_FILE = './sessions.json';
-const TIMEOUT_MS = 10 * 60 * 1000; // 10 Minutes
+const TIMEOUT_MS = 10 * 60 * 1000; // 10 Minutes Timeout
 const BOT_NAME = 'Bihar Sathi AI';
 
 // 🔴 ANTI-CRASH: Message Retry Cache
@@ -64,11 +68,11 @@ function saveSessions() {
     try {
         const data = JSON.stringify([...userSession]);
         fs.writeFileSync(SESSION_FILE, data);
-    } catch (e) { /* Ignore */ }
+    } catch (e) { /* Ignore Error */ }
 }
 
 // ═════════════════════════════════════════════
-// 🎨 UI & UX ASSETS (FULL PREMIUM)
+// 🎨 UI & UX ASSETS (PREMIUM DESIGN)
 // ═════════════════════════════════════════════
 const getTimeGreeting = () => {
     const hr = new Date().getHours();
@@ -154,7 +158,7 @@ ${note}
 };
 
 // ═════════════════════════════════════════════
-// 🧠 SERVICE LOGIC (FULL MENU)
+// 🧠 SERVICE LOGIC (FULL EXPERT MENU)
 // ═════════════════════════════════════════════
 const SERVICES = {
     '1': {
@@ -205,7 +209,7 @@ const SERVICES = {
 };
 
 // ═════════════════════════════════════════════
-// 🔌 CONNECTION LOGIC (ANTI-CRASH + EXPERT)
+// 🔌 CONNECTION LOGIC (ANTI-CRASH)
 // ═════════════════════════════════════════════
 async function connectToWhatsApp() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
@@ -237,11 +241,13 @@ async function connectToWhatsApp() {
         const { connection, lastDisconnect } = update;
         if (connection === 'close') {
             if (intervalId) clearInterval(intervalId);
-            // 🔴 IMPROVED RECONNECT LOGIC
+            
+            // 🔴 ROBUST RECONNECT LOGIC
             let reason = new Boom(lastDisconnect?.error)?.output.statusCode;
             if (reason === DisconnectReason.badSession) {
-                console.log(`❌ Bad Session File, Please Delete Session and Scan Again`);
-                process.exit();
+                console.log(`❌ Bad Session - Waiting for Reset...`);
+                // Force Reset code at top will handle this on next restart
+                process.exit(); 
             } else if (reason === DisconnectReason.connectionClosed) {
                 console.log("⚠️ Connection closed, reconnecting....");
                 connectToWhatsApp();
@@ -397,7 +403,6 @@ async function connectToWhatsApp() {
                 }
             } catch (err) {
                 console.error("Bot Error:", err);
-                // Prevent crash loop by resetting session step
                 if (userSession.has(msg.key.remoteJid)) {
                    userSession.get(msg.key.remoteJid).step = 'MAIN_MENU';
                 }
@@ -420,4 +425,3 @@ process.on('uncaughtException', function (err) {
 });
 
 connectToWhatsApp();
-
