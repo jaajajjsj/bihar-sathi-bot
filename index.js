@@ -14,31 +14,33 @@ const AdmZip = require('adm-zip');
 const app = express();
 
 // ═════════════════════════════════════════════
-// 🟢 1. AUTO-UNZIPPER (THE LOGIN FIX)
+// 🟢 1. AUTO-UNZIPPER (LOGIN FIX)
 // ═════════════════════════════════════════════
 if (!fs.existsSync('./auth_info_baileys') && fs.existsSync('./auth_info_baileys.zip')) {
     console.log("📦 Found Zip Session! Unzipping...");
     const zip = new AdmZip('./auth_info_baileys.zip');
-    // 🔴 FIX: Extracts to the main folder so the bot finds it immediately
     zip.extractAllTo('./', true); 
     console.log("✅ Unzip Complete! Starting Bot...");
 }
 
 // ═════════════════════════════════════════════
-// 🟢 2. SERVER KEEPER (MAKES IT 24/7)
+// 🟢 2. SERVER KEEPER (24/7)
 // ═════════════════════════════════════════════
 const PORT = process.env.PORT || 3000;
-app.get('/', (req, res) => res.send('✅ Bihar Sathi Bot is Running 24/7! 🚀'));
+app.get('/', (req, res) => res.send('✅ Bihar Sathi Bot is Running (Expert + Anti-Crash Mode) 🚀'));
 app.listen(PORT, () => console.log(`Server is keeping bot alive on port ${PORT}`));
 
 // ═════════════════════════════════════════════
-// ⚙️ EXPERT CONFIGURATION
+// ⚙️ CONFIGURATION
 // ═════════════════════════════════════════════
 const ADMIN_NUMBER = '919341434302@s.whatsapp.net'; 
 const UPI_ID = '7633832024';
 const SESSION_FILE = './sessions.json';
-const TIMEOUT_MS = 10 * 60 * 1000; // 10 Minutes Timeout
+const TIMEOUT_MS = 10 * 60 * 1000; // 10 Minutes
 const BOT_NAME = 'Bihar Sathi AI';
+
+// 🔴 ANTI-CRASH: Message Retry Cache
+const msgRetryCounterCache = new Map();
 
 // ═════════════════════════════════════════════
 // 💾 STATE MANAGEMENT
@@ -57,11 +59,11 @@ function saveSessions() {
     try {
         const data = JSON.stringify([...userSession]);
         fs.writeFileSync(SESSION_FILE, data);
-    } catch (e) { console.error("⚠️ Session Save Error:", e); }
+    } catch (e) { /* Ignore */ }
 }
 
 // ═════════════════════════════════════════════
-// 🎨 UI & UX ASSETS (PREMIUM)
+// 🎨 UI & UX ASSETS (FULL PREMIUM)
 // ═════════════════════════════════════════════
 const getTimeGreeting = () => {
     const hr = new Date().getHours();
@@ -147,7 +149,7 @@ ${note}
 };
 
 // ═════════════════════════════════════════════
-// 🧠 SERVICE LOGIC
+// 🧠 SERVICE LOGIC (FULL MENU)
 // ═════════════════════════════════════════════
 const SERVICES = {
     '1': {
@@ -198,7 +200,7 @@ const SERVICES = {
 };
 
 // ═════════════════════════════════════════════
-// 🔌 CONNECTION LOGIC
+// 🔌 CONNECTION LOGIC (ANTI-CRASH + EXPERT)
 // ═════════════════════════════════════════════
 async function connectToWhatsApp() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
@@ -209,10 +211,12 @@ async function connectToWhatsApp() {
         auth: state,
         printQRInTerminal: false,
         logger: pino({ level: 'silent' }),
-        browser: ['Bihar-Sathi-Cloud', 'Chrome', '1.0.0'],
+        browser: ['Bihar-Sathi-Pro', 'Chrome', '1.0.0'],
+        msgRetryCounterCache, // 🔴 PREVENTS CRASH
+        connectTimeoutMs: 60000,
         keepAliveIntervalMs: 10000,
-        emitOwnEvents: false,
-        retryRequestDelayMs: 2000 
+        emitOwnEvents: true,
+        retryRequestDelayMs: 5000
     });
 
     // ✨ SMART REPLY SIMULATION
@@ -228,11 +232,27 @@ async function connectToWhatsApp() {
         const { connection, lastDisconnect } = update;
         if (connection === 'close') {
             if (intervalId) clearInterval(intervalId);
-            const shouldReconnect = (lastDisconnect.error instanceof Boom) ? lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut : true;
-            if (shouldReconnect) setTimeout(connectToWhatsApp, 2000);
+            // 🔴 IMPROVED RECONNECT LOGIC
+            let reason = new Boom(lastDisconnect?.error)?.output.statusCode;
+            if (reason === DisconnectReason.badSession) {
+                console.log(`❌ Bad Session File, Please Delete Session and Scan Again`);
+                process.exit();
+            } else if (reason === DisconnectReason.connectionClosed) {
+                console.log("⚠️ Connection closed, reconnecting....");
+                connectToWhatsApp();
+            } else if (reason === DisconnectReason.connectionLost) {
+                console.log("⚠️ Connection Lost from Server, reconnecting...");
+                connectToWhatsApp();
+            } else if (reason === DisconnectReason.restartRequired) {
+                console.log("⚠️ Restart Required, Restarting...");
+                connectToWhatsApp();
+            } else {
+                console.log(`⚠️ Unknown DisconnectReason: ${reason}|${connection}`);
+                connectToWhatsApp();
+            }
         } else if (connection === 'open') {
-            console.log(`✅ ${BOT_NAME} IS ONLINE!`);
-            // Session Cleanup
+            console.log(`✅ ${BOT_NAME} IS ONLINE & STABLE!`);
+            // Session Garbage Collector
             intervalId = setInterval(() => {
                 const now = Date.now();
                 userSession.forEach((session, jid) => {
@@ -252,37 +272,37 @@ async function connectToWhatsApp() {
         if (type !== 'notify') return;
 
         for (const msg of messages) {
-            if (!msg.message || msg.key.fromMe) continue;
-
-            const remoteJid = msg.key.remoteJid;
-
-            // 🎙️ VOICE HANDLING
-            if (msg.message.audioMessage) {
-                await smartReply(remoteJid, UI.VOICE_RECEIVED);
-                await sock.sendMessage(ADMIN_NUMBER, { 
-                    text: `🎤 *VOICE RECEIVED* from +${remoteJid.split('@')[0]}\n(Check chat list)` 
-                });
-                return;
-            }
-
-            const textBody = (msg.message.conversation || msg.message.extendedTextMessage?.text || "").trim();
-            const lowerText = textBody.toLowerCase();
-
-            if (!userSession.has(remoteJid)) {
-                userSession.set(remoteJid, { step: 'MAIN_MENU', service: '', lastActive: Date.now() });
-            }
-            const session = userSession.get(remoteJid);
-            session.lastActive = Date.now();
-            saveSessions();
-
-            if (['hi', 'hello', 'menu', '0', 'start'].includes(lowerText)) {
-                session.step = 'MAIN_MENU';
-                session.memberName = null;
-                await smartReply(remoteJid, UI.WELCOME());
-                return;
-            }
-
             try {
+                if (!msg.message || msg.key.fromMe) continue;
+
+                const remoteJid = msg.key.remoteJid;
+
+                // 🎙️ VOICE HANDLING
+                if (msg.message.audioMessage) {
+                    await smartReply(remoteJid, UI.VOICE_RECEIVED);
+                    await sock.sendMessage(ADMIN_NUMBER, { 
+                        text: `🎤 *VOICE RECEIVED* from +${remoteJid.split('@')[0]}\n(Check chat list)` 
+                    });
+                    return;
+                }
+
+                const textBody = (msg.message.conversation || msg.message.extendedTextMessage?.text || "").trim();
+                const lowerText = textBody.toLowerCase();
+
+                if (!userSession.has(remoteJid)) {
+                    userSession.set(remoteJid, { step: 'MAIN_MENU', service: '', lastActive: Date.now() });
+                }
+                const session = userSession.get(remoteJid);
+                session.lastActive = Date.now();
+                saveSessions();
+
+                if (['hi', 'hello', 'menu', '0', 'start'].includes(lowerText)) {
+                    session.step = 'MAIN_MENU';
+                    session.memberName = null;
+                    await smartReply(remoteJid, UI.WELCOME());
+                    return;
+                }
+
                 switch (session.step) {
                     case 'MAIN_MENU':
                         if (SERVICES[textBody]) {
@@ -372,8 +392,10 @@ async function connectToWhatsApp() {
                 }
             } catch (err) {
                 console.error("Bot Error:", err);
-                session.step = 'MAIN_MENU';
-                await smartReply(remoteJid, "⚠️ System Error. Resetting... Type 'Hi'.");
+                // Prevent crash loop by resetting session step
+                if (userSession.has(msg.key.remoteJid)) {
+                   userSession.get(msg.key.remoteJid).step = 'MAIN_MENU';
+                }
             }
         }
     });
@@ -386,5 +408,10 @@ async function sendUploadReq(sock, jid, session) {
     const d = session.serviceData;
     await sock.sendMessage(jid, { text: UI.UPLOAD(d.title, d.req.join("\n"), d.note || "", session.memberName) });
 }
+
+// 🔴 GLOBAL ERROR HANDLER
+process.on('uncaughtException', function (err) {
+    console.log('Caught exception: ' + err);
+});
 
 connectToWhatsApp();
