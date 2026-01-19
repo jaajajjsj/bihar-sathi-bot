@@ -1,3 +1,7 @@
+// 🔴 FIX: Added 'crypto' to solve the ReferenceError
+const crypto = require('crypto'); 
+global.crypto = crypto; // Ensures it works globally
+
 const {
     default: makeWASocket,
     useMultiFileAuthState,
@@ -15,7 +19,7 @@ const app = express();
 // ═════════════════════════════════════════════
 // ⚙️ CONFIGURATION (EDIT HERE)
 // ═════════════════════════════════════════════
-const MY_PHONE_NUMBER = "919341434302"; // 🔴 YOUR NUMBER (For Pairing Code)
+const MY_PHONE_NUMBER = "919341434302"; // 🔴 YOUR NUMBER (No +)
 const ADMIN_NUMBER = "919341434302@s.whatsapp.net"; 
 const UPI_ID = '7633832024';
 const SESSION_FILE = './sessions.json';
@@ -50,7 +54,7 @@ function saveSessions() {
 }
 
 // ═════════════════════════════════════════════
-// 🎨 UI & UX ASSETS (PREMIUM DESIGN)
+// 🎨 UI & UX ASSETS
 // ═════════════════════════════════════════════
 
 const getTimeGreeting = () => {
@@ -197,18 +201,18 @@ async function connectToWhatsApp() {
     const sock = makeWASocket({
         version,
         auth: state,
-        printQRInTerminal: false, // QR Disabled
+        printQRInTerminal: false,
         logger: pino({ level: 'silent' }),
-        browser: ['Ubuntu', 'Chrome', '20.0.04'], // Required for Pairing Code
+        browser: ['Ubuntu', 'Chrome', '20.0.04'],
         keepAliveIntervalMs: 10000,
         emitOwnEvents: false,
         retryRequestDelayMs: 2000 
     });
 
-    // 🔴 GENERATE PAIRING CODE
     if (!sock.authState.creds.registered) {
         setTimeout(async () => {
             try {
+                // Now this line will work because 'crypto' is defined
                 const code = await sock.requestPairingCode(MY_PHONE_NUMBER);
                 console.log("\n\n####################################");
                 console.log(`💬 PAIRING CODE: ${code}`);
@@ -216,10 +220,9 @@ async function connectToWhatsApp() {
             } catch (err) {
                 console.log("⚠️ Pairing Code Error: " + err);
             }
-        }, 3000);
+        }, 5000);
     }
 
-    // ✨ SMART REPLY SIMULATION
     const smartReply = async (jid, text) => {
         await sock.readMessages([jid]);
         await sock.sendPresenceUpdate('composing', jid);
@@ -236,7 +239,6 @@ async function connectToWhatsApp() {
             if (shouldReconnect) setTimeout(connectToWhatsApp, 2000);
         } else if (connection === 'open') {
             console.log(`✅ ${BOT_NAME} IS ONLINE!`);
-            // Session Garbage Collector
             intervalId = setInterval(() => {
                 const now = Date.now();
                 userSession.forEach((session, jid) => {
@@ -257,10 +259,8 @@ async function connectToWhatsApp() {
 
         for (const msg of messages) {
             if (!msg.message || msg.key.fromMe) continue;
-
             const remoteJid = msg.key.remoteJid;
 
-            // 🎙️ VOICE HANDLING
             if (msg.message.audioMessage) {
                 await smartReply(remoteJid, UI.VOICE_RECEIVED);
                 await sock.sendMessage(ADMIN_NUMBER, { 
