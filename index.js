@@ -8,38 +8,30 @@ const {
 } = require('@whiskeysockets/baileys');
 const pino = require('pino');
 const { Boom } = require('@hapi/boom');
-const qrcode = require('qrcode-terminal');
 const fs = require('fs');
 const express = require('express');
-const AdmZip = require('adm-zip'); // NEW: For Unzipping
 const app = express();
 
 // ═════════════════════════════════════════════
-// 📦 AUTO-UNZIP LOGIC (THE FIX)
+// ⚙️ CONFIGURATION (EDIT HERE)
 // ═════════════════════════════════════════════
-if (!fs.existsSync('./auth_info_baileys') && fs.existsSync('./auth_info_baileys.zip')) {
-    console.log("📦 Found Zip Session! Unzipping...");
-    const zip = new AdmZip('./auth_info_baileys.zip');
-    zip.extractAllTo('./', true);
-    console.log("✅ Unzip Complete! Starting Bot...");
-}
+const MY_PHONE_NUMBER = "919341434302"; // 🔴 YOUR NUMBER (For Pairing Code)
+const ADMIN_NUMBER = "919341434302@s.whatsapp.net"; 
+const UPI_ID = '7633832024';
+const SESSION_FILE = './sessions.json';
+const TIMEOUT_MS = 10 * 60 * 1000; 
+const BOT_NAME = 'Bihar Sathi AI';
 
 // ═════════════════════════════════════════════
 // ⚙️ SERVER KEEPER (MAKES IT 24/7)
 // ═════════════════════════════════════════════
 const PORT = process.env.PORT || 3000;
-app.get('/', (req, res) => res.send('Bot is Running! 🚀'));
+app.get('/', (req, res) => res.send('✅ Bot is Running! Check Render Logs for Pairing Code.'));
 app.listen(PORT, () => console.log(`Server is keeping bot alive on port ${PORT}`));
 
 // ═════════════════════════════════════════════
-// ⚙️ BOT CONFIGURATION
+// 💾 STATE MANAGEMENT
 // ═════════════════════════════════════════════
-const ADMIN_NUMBER = '919341434302@s.whatsapp.net'; 
-const UPI_ID = '7633832024';
-const SESSION_FILE = './sessions.json';
-const TIMEOUT_MS = 10 * 60 * 1000; 
-
-// --- STATE MANAGEMENT ---
 let userSession = new Map();
 let intervalId = null;
 
@@ -47,17 +39,20 @@ if (fs.existsSync(SESSION_FILE)) {
     try {
         const rawData = fs.readFileSync(SESSION_FILE);
         userSession = new Map(JSON.parse(rawData));
-    } catch (e) { console.error("Session Error, starting fresh."); }
+    } catch (e) { console.error("⚠️ Session Load Error - Starting Fresh"); }
 }
 
 function saveSessions() {
     try {
         const data = JSON.stringify([...userSession]);
         fs.writeFileSync(SESSION_FILE, data);
-    } catch (e) { console.error("Save Error", e); }
+    } catch (e) { console.error("⚠️ Session Save Error:", e); }
 }
 
-// --- TEXT ASSETS ---
+// ═════════════════════════════════════════════
+// 🎨 UI & UX ASSETS (PREMIUM DESIGN)
+// ═════════════════════════════════════════════
+
 const getTimeGreeting = () => {
     const hr = new Date().getHours();
     if (hr < 12) return "Good Morning ☀️";
@@ -141,14 +136,60 @@ ${note}
     TIMEOUT: "⚠️ *Session Expired*\nदुबारा शुरू करने के लिए *Hi* लिखें."
 };
 
-// --- SERVICES ---
+// ═════════════════════════════════════════════
+// 🧠 SERVICE LOGIC
+// ═════════════════════════════════════════════
 const SERVICES = {
-    '1': { key: 'AADHAAR', title: 'आधार कार्ड', menu: `🆔 *आधार कार्ड सेवा*\n──────────────────\n1️⃣ पता अपडेट (Address)\n2️⃣ पिता का नाम (Father Name)\n3️⃣ पति का नाम (Husband Name)\n0️⃣ Go Back`, req: ["🔹 आधार कार्ड (Original)", "🔹 आवासीय प्रमाण पत्र"], note: "\n⚠️ *Note:* OTP के लिए तैयार रहें।" },
-    '2': { key: 'PAN', title: 'पैन कार्ड', menu: `💳 *पैन कार्ड सेवा*\n──────────────────\n1️⃣ नाम सुधार (Name Correction)\n2️⃣ जन्म तिथि (DOB Update)\n3️⃣ नया पैन (New Apply)\n0️⃣ Go Back`, req: ["🔹 आधार कार्ड", "🔹 फोटो", "🔹 साइन"] },
-    '3': { key: 'CERT', title: 'प्रमाण पत्र', menu: `📜 *प्रमाण पत्र सेवा*\n──────────────────\n1️⃣ आय प्रमाण पत्र\n2️⃣ जाति प्रमाण पत्र\n3️⃣ आवासीय प्रमाण पत्र\n0️⃣ Go Back`, req: ["🔹 फोटो", "🔹 आधार कार्ड", "🔹 पुराना प्रमाण (यदि है)"] },
-    '4': { key: 'RATION', title: 'राशन कार्ड', menu: `🍚 *राशन कार्ड सेवा*\n──────────────────\n1️⃣ नया आवेदन (New Application)\n2️⃣ सदस्य जोड़ें (Add Member)\n3️⃣ सदस्य हटाएं (Remove Member)\n0️⃣ Go Back`, req: ["🔹 मुखिया का आधार", "🔹 बैंक खाता", "🔹 सभी सदस्यों का आधार", "🔹 फोटो"] }
+    '1': {
+        key: 'AADHAAR',
+        title: 'आधार कार्ड',
+        menu: `🆔 *आधार कार्ड सेवा*
+──────────────────
+1️⃣ पता अपडेट (Address)
+2️⃣ पिता का नाम (Father Name)
+3️⃣ पति का नाम (Husband Name)
+0️⃣ Go Back`,
+        req: ["🔹 आधार कार्ड (Original)", "🔹 आवासीय प्रमाण पत्र"],
+        note: "\n⚠️ *Note:* OTP के लिए तैयार रहें।"
+    },
+    '2': {
+        key: 'PAN',
+        title: 'पैन कार्ड',
+        menu: `💳 *पैन कार्ड सेवा*
+──────────────────
+1️⃣ नाम सुधार (Name Correction)
+2️⃣ जन्म तिथि (DOB Update)
+3️⃣ नया पैन (New Apply)
+0️⃣ Go Back`,
+        req: ["🔹 आधार कार्ड", "🔹 फोटो", "🔹 साइन"]
+    },
+    '3': {
+        key: 'CERT',
+        title: 'प्रमाण पत्र',
+        menu: `📜 *प्रमाण पत्र सेवा*
+──────────────────
+1️⃣ आय प्रमाण पत्र
+2️⃣ जाति प्रमाण पत्र
+3️⃣ आवासीय प्रमाण पत्र
+0️⃣ Go Back`,
+        req: ["🔹 फोटो", "🔹 आधार कार्ड", "🔹 पुराना प्रमाण (यदि है)"]
+    },
+    '4': {
+        key: 'RATION',
+        title: 'राशन कार्ड',
+        menu: `🍚 *राशन कार्ड सेवा*
+──────────────────
+1️⃣ नया आवेदन (New Application)
+2️⃣ सदस्य जोड़ें (Add Member)
+3️⃣ सदस्य हटाएं (Remove Member)
+0️⃣ Go Back`,
+        req: ["🔹 मुखिया का आधार", "🔹 बैंक खाता", "🔹 सभी सदस्यों का आधार", "🔹 फोटो"]
+    }
 };
 
+// ═════════════════════════════════════════════
+// 🔌 CONNECTION LOGIC (PAIRING CODE EDITION)
+// ═════════════════════════════════════════════
 async function connectToWhatsApp() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
     const { version } = await fetchLatestBaileysVersion();
@@ -156,14 +197,29 @@ async function connectToWhatsApp() {
     const sock = makeWASocket({
         version,
         auth: state,
-        printQRInTerminal: true,
+        printQRInTerminal: false, // QR Disabled
         logger: pino({ level: 'silent' }),
-        browser: ['Bihar-Sathi-Cloud', 'Chrome', '1.0.0'],
+        browser: ['Ubuntu', 'Chrome', '20.0.04'], // Required for Pairing Code
         keepAliveIntervalMs: 10000,
         emitOwnEvents: false,
         retryRequestDelayMs: 2000 
     });
 
+    // 🔴 GENERATE PAIRING CODE
+    if (!sock.authState.creds.registered) {
+        setTimeout(async () => {
+            try {
+                const code = await sock.requestPairingCode(MY_PHONE_NUMBER);
+                console.log("\n\n####################################");
+                console.log(`💬 PAIRING CODE: ${code}`);
+                console.log("####################################\n\n");
+            } catch (err) {
+                console.log("⚠️ Pairing Code Error: " + err);
+            }
+        }, 3000);
+    }
+
+    // ✨ SMART REPLY SIMULATION
     const smartReply = async (jid, text) => {
         await sock.readMessages([jid]);
         await sock.sendPresenceUpdate('composing', jid);
@@ -173,18 +229,14 @@ async function connectToWhatsApp() {
     };
 
     sock.ev.on('connection.update', async (update) => {
-        const { connection, lastDisconnect, qr } = update;
-        // Check if QR code is needed (only if zip failed or expired)
-        if (qr && !fs.existsSync('./auth_info_baileys')) { 
-            console.log("⚠️ Session missing or expired. Please scan QR.");
-        }
-
+        const { connection, lastDisconnect } = update;
         if (connection === 'close') {
             if (intervalId) clearInterval(intervalId);
             const shouldReconnect = (lastDisconnect.error instanceof Boom) ? lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut : true;
             if (shouldReconnect) setTimeout(connectToWhatsApp, 2000);
         } else if (connection === 'open') {
-            console.log('✅ BOT IS ONLINE ON CLOUD!');
+            console.log(`✅ ${BOT_NAME} IS ONLINE!`);
+            // Session Garbage Collector
             intervalId = setInterval(() => {
                 const now = Date.now();
                 userSession.forEach((session, jid) => {
@@ -202,27 +254,34 @@ async function connectToWhatsApp() {
 
     sock.ev.on('messages.upsert', async ({ messages, type }) => {
         if (type !== 'notify') return;
+
         for (const msg of messages) {
             if (!msg.message || msg.key.fromMe) continue;
+
             const remoteJid = msg.key.remoteJid;
 
-            // VOICE MESSAGE
+            // 🎙️ VOICE HANDLING
             if (msg.message.audioMessage) {
                 await smartReply(remoteJid, UI.VOICE_RECEIVED);
-                await sock.sendMessage(ADMIN_NUMBER, { text: `🎤 *VOICE RECEIVED* from +${remoteJid.split('@')[0]}\n(Check chat)` });
+                await sock.sendMessage(ADMIN_NUMBER, { 
+                    text: `🎤 *VOICE RECEIVED* from +${remoteJid.split('@')[0]}\n(Check chat list)` 
+                });
                 return;
             }
 
             const textBody = (msg.message.conversation || msg.message.extendedTextMessage?.text || "").trim();
             const lowerText = textBody.toLowerCase();
 
-            if (!userSession.has(remoteJid)) userSession.set(remoteJid, { step: 'MAIN_MENU', service: '', lastActive: Date.now() });
+            if (!userSession.has(remoteJid)) {
+                userSession.set(remoteJid, { step: 'MAIN_MENU', service: '', lastActive: Date.now() });
+            }
             const session = userSession.get(remoteJid);
             session.lastActive = Date.now();
             saveSessions();
 
             if (['hi', 'hello', 'menu', '0', 'start'].includes(lowerText)) {
                 session.step = 'MAIN_MENU';
+                session.memberName = null;
                 await smartReply(remoteJid, UI.WELCOME());
                 return;
             }
@@ -233,6 +292,7 @@ async function connectToWhatsApp() {
                         if (SERVICES[textBody]) {
                             session.service = SERVICES[textBody].key;
                             session.serviceData = JSON.parse(JSON.stringify(SERVICES[textBody]));
+                            
                             if (session.serviceData.menu) {
                                 session.step = 'SUB_MENU';
                                 await smartReply(remoteJid, session.serviceData.menu);
@@ -240,18 +300,35 @@ async function connectToWhatsApp() {
                                 session.step = 'DOCS';
                                 await sendUploadReq(sock, remoteJid, session);
                             }
-                        } else if (textBody === '5') await smartReply(remoteJid, UI.RATE_LIST);
-                        else if (textBody === '6') await smartReply(remoteJid, "📞 *Call Request Sent!*");
+                        }
+                        else if (textBody === '5') await smartReply(remoteJid, UI.RATE_LIST);
+                        else if (textBody === '6') {
+                            await smartReply(remoteJid, "📞 *Call Request Sent!*\nAn executive will call you shortly.");
+                            await sock.sendMessage(ADMIN_NUMBER, { text: `🚨 CALL REQUEST: ${remoteJid.split('@')[0]}` });
+                        }
+                        else if (textBody.length > 0) await smartReply(remoteJid, "❌ गलत विकल्प। कृपया 1-6 चुनें।");
                         break;
-                    
+
                     case 'SUB_MENU':
-                        if(textBody.length > 0) {
+                        if (textBody.length > 0) {
                             session.subService = textBody;
-                            if(session.service === 'RATION' && (textBody === '2' || textBody === '3')) {
-                                session.step = 'AWAITING_NAME';
-                                session.serviceData.title = textBody === '2' ? "Add Member" : "Remove Member";
-                                await smartReply(remoteJid, UI.ASK_NAME(textBody === '2' ? 'Add' : 'Remove'));
-                                return;
+
+                            if (session.service === 'RATION') {
+                                if (textBody === '2') { // Add
+                                    session.step = 'AWAITING_NAME';
+                                    session.serviceData.title = "Ration - Add Member";
+                                    await smartReply(remoteJid, UI.ASK_NAME('add'));
+                                    return;
+                                } 
+                                else if (textBody === '3') { // Remove
+                                    session.step = 'AWAITING_NAME';
+                                    session.serviceData.title = "Ration - Remove Member";
+                                    await smartReply(remoteJid, UI.ASK_NAME('remove'));
+                                    return;
+                                }
+                                else if (textBody === '1') {
+                                    session.serviceData.title = "Ration - New Application";
+                                }
                             }
                             session.step = 'DOCS';
                             await sendUploadReq(sock, remoteJid, session);
@@ -259,10 +336,10 @@ async function connectToWhatsApp() {
                         break;
 
                     case 'AWAITING_NAME':
-                        if(textBody.length > 0) {
+                        if (textBody.length > 0) {
                             session.memberName = textBody;
                             session.step = 'DOCS';
-                            // Dynamic Reqs
+
                             if (session.serviceData.title.includes("Add")) {
                                 session.serviceData.req = ["🔹 राशन कार्ड", "🔹 सभी का आधार", "🔹 सभी की फोटो", "🔹 मुखिया का जाति, आवासी, आय", "🔹 हस्ताक्षर"];
                             } else if (session.serviceData.title.includes("Remove")) {
@@ -273,35 +350,45 @@ async function connectToWhatsApp() {
                         break;
 
                     case 'DOCS':
-                        if(['done', 'pay'].includes(lowerText)) {
-                            session.orderId = 'CSC-' + Math.floor(Math.random() * 9000);
+                        if (['done', 'pay', 'ok'].includes(lowerText)) {
+                            session.orderId = 'CSC-' + Math.floor(1000 + Math.random() * 9000);
                             session.step = 'PAYMENT';
                             await smartReply(remoteJid, UI.PAYMENT(session.orderId));
-                        } else if (msg.message.imageMessage || msg.message.documentMessage) {
-                            await sock.sendMessage(remoteJid, { text: "📥 *Received!*" });
+                        } 
+                        else if (msg.message.imageMessage || msg.message.documentMessage) {
+                            await sock.sendMessage(remoteJid, { text: "📥 *Document Received!* (Send more or type DONE)" });
                         }
                         break;
 
                     case 'PAYMENT':
-                        if(msg.message.imageMessage) {
+                        if (msg.message.imageMessage) {
                             await smartReply(remoteJid, UI.THANK_YOU);
-                            let alert = `🚨 *NEW ORDER*\n🆔 ${session.orderId}\n👤 +${remoteJid.split('@')[0]}\n🛠 ${session.serviceData.title}`;
-                            if(session.memberName) alert += `\n🧑 ${session.memberName}`;
-                            await sock.sendMessage(ADMIN_NUMBER, { text: alert });
+                            const sName = session.serviceData?.title || "General";
+                            let alertMsg = `🚨 *NEW ORDER* 🚨\n\n🆔 ID: \`${session.orderId}\`\n👤 User: +${remoteJid.split('@')[0]}\n🛠 Service: ${sName}`;
+                            if(session.memberName) alertMsg += `\n🧑 Member Name: ${session.memberName}`;
+                            await sock.sendMessage(ADMIN_NUMBER, { text: alertMsg });
                             userSession.delete(remoteJid);
                             saveSessions();
+                        } else {
+                            await smartReply(remoteJid, "❌ Please send the *Payment Screenshot*.");
                         }
                         break;
                 }
-            } catch (e) { session.step = 'MAIN_MENU'; }
+            } catch (err) {
+                console.error("Bot Error:", err);
+                session.step = 'MAIN_MENU';
+                await smartReply(remoteJid, "⚠️ System Error. Resetting... Type 'Hi'.");
+            }
         }
     });
 }
+
 async function sendUploadReq(sock, jid, session) {
     await sock.sendPresenceUpdate('composing', jid);
-    await delay(1000); 
+    await delay(1000);
     await sock.sendPresenceUpdate('paused', jid);
     const d = session.serviceData;
     await sock.sendMessage(jid, { text: UI.UPLOAD(d.title, d.req.join("\n"), d.note || "", session.memberName) });
 }
+
 connectToWhatsApp();
