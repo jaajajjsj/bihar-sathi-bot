@@ -1,7 +1,3 @@
-// 🔴 FIX: Added 'crypto' to solve the ReferenceError
-const crypto = require('crypto'); 
-global.crypto = crypto; // Ensures it works globally
-
 const {
     default: makeWASocket,
     useMultiFileAuthState,
@@ -14,27 +10,34 @@ const pino = require('pino');
 const { Boom } = require('@hapi/boom');
 const fs = require('fs');
 const express = require('express');
+const AdmZip = require('adm-zip');
 const app = express();
 
-// ═════════════════════════════════════════════
-// ⚙️ CONFIGURATION (EDIT HERE)
-// ═════════════════════════════════════════════
-const MY_PHONE_NUMBER = "919341434302"; // 🔴 YOUR NUMBER (No +)
-const ADMIN_NUMBER = "919341434302@s.whatsapp.net"; 
-const UPI_ID = '7633832024';
-const SESSION_FILE = './sessions.json';
-const TIMEOUT_MS = 10 * 60 * 1000; 
-const BOT_NAME = 'Bihar Sathi AI';
+// 🟢 1. AUTO-UNZIPPER (THE LOGIN FIX)
+// This automatically extracts your session file on the cloud
+if (!fs.existsSync('./auth_info_baileys') && fs.existsSync('./auth_info_baileys.zip')) {
+    console.log("📦 Found Zip Session! Unzipping...");
+    const zip = new AdmZip('./auth_info_baileys.zip');
+    zip.extractAllTo('./auth_info_baileys', true);
+    console.log("✅ Unzip Complete! Starting Bot...");
+}
 
-// ═════════════════════════════════════════════
-// ⚙️ SERVER KEEPER (MAKES IT 24/7)
-// ═════════════════════════════════════════════
+// 🟢 2. SERVER KEEPER (MAKES IT 24/7)
 const PORT = process.env.PORT || 3000;
-app.get('/', (req, res) => res.send('✅ Bot is Running! Check Render Logs for Pairing Code.'));
+app.get('/', (req, res) => res.send('✅ Bihar Sathi Bot is Running 24/7! 🚀'));
 app.listen(PORT, () => console.log(`Server is keeping bot alive on port ${PORT}`));
 
 // ═════════════════════════════════════════════
-// 💾 STATE MANAGEMENT
+// ⚙️ EXPERT CONFIGURATION
+// ═════════════════════════════════════════════
+const ADMIN_NUMBER = '919341434302@s.whatsapp.net'; 
+const UPI_ID = '7633832024';
+const SESSION_FILE = './sessions.json';
+const TIMEOUT_MS = 10 * 60 * 1000; // 10 Minutes Session Timeout
+const BOT_NAME = 'Bihar Sathi AI';
+
+// ═════════════════════════════════════════════
+// 💾 SMART STATE MANAGEMENT
 // ═════════════════════════════════════════════
 let userSession = new Map();
 let intervalId = null;
@@ -54,7 +57,7 @@ function saveSessions() {
 }
 
 // ═════════════════════════════════════════════
-// 🎨 UI & UX ASSETS
+// 🎨 UI & UX ASSETS (PREMIUM DESIGN)
 // ═════════════════════════════════════════════
 
 const getTimeGreeting = () => {
@@ -192,7 +195,7 @@ const SERVICES = {
 };
 
 // ═════════════════════════════════════════════
-// 🔌 CONNECTION LOGIC (PAIRING CODE EDITION)
+// 🔌 CONNECTION LOGIC (ZIP EDITION)
 // ═════════════════════════════════════════════
 async function connectToWhatsApp() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
@@ -201,28 +204,15 @@ async function connectToWhatsApp() {
     const sock = makeWASocket({
         version,
         auth: state,
-        printQRInTerminal: false,
+        printQRInTerminal: false, // QR handled via Zip
         logger: pino({ level: 'silent' }),
-        browser: ['Ubuntu', 'Chrome', '20.0.04'],
+        browser: ['Bihar-Sathi-Cloud', 'Chrome', '1.0.0'],
         keepAliveIntervalMs: 10000,
         emitOwnEvents: false,
         retryRequestDelayMs: 2000 
     });
 
-    if (!sock.authState.creds.registered) {
-        setTimeout(async () => {
-            try {
-                // Now this line will work because 'crypto' is defined
-                const code = await sock.requestPairingCode(MY_PHONE_NUMBER);
-                console.log("\n\n####################################");
-                console.log(`💬 PAIRING CODE: ${code}`);
-                console.log("####################################\n\n");
-            } catch (err) {
-                console.log("⚠️ Pairing Code Error: " + err);
-            }
-        }, 5000);
-    }
-
+    // ✨ SMART REPLY SIMULATION
     const smartReply = async (jid, text) => {
         await sock.readMessages([jid]);
         await sock.sendPresenceUpdate('composing', jid);
@@ -259,8 +249,10 @@ async function connectToWhatsApp() {
 
         for (const msg of messages) {
             if (!msg.message || msg.key.fromMe) continue;
+
             const remoteJid = msg.key.remoteJid;
 
+            // 🎙️ VOICE HANDLING
             if (msg.message.audioMessage) {
                 await smartReply(remoteJid, UI.VOICE_RECEIVED);
                 await sock.sendMessage(ADMIN_NUMBER, { 
