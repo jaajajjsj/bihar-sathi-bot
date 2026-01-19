@@ -13,16 +13,20 @@ const express = require('express');
 const AdmZip = require('adm-zip');
 const app = express();
 
+// ═════════════════════════════════════════════
 // 🟢 1. AUTO-UNZIPPER (THE LOGIN FIX)
-// This automatically extracts your session file on the cloud
+// ═════════════════════════════════════════════
 if (!fs.existsSync('./auth_info_baileys') && fs.existsSync('./auth_info_baileys.zip')) {
     console.log("📦 Found Zip Session! Unzipping...");
     const zip = new AdmZip('./auth_info_baileys.zip');
-    zip.extractAllTo('./auth_info_baileys', true);
+    // 🔴 FIX: Extracts to the main folder so the bot finds it immediately
+    zip.extractAllTo('./', true); 
     console.log("✅ Unzip Complete! Starting Bot...");
 }
 
+// ═════════════════════════════════════════════
 // 🟢 2. SERVER KEEPER (MAKES IT 24/7)
+// ═════════════════════════════════════════════
 const PORT = process.env.PORT || 3000;
 app.get('/', (req, res) => res.send('✅ Bihar Sathi Bot is Running 24/7! 🚀'));
 app.listen(PORT, () => console.log(`Server is keeping bot alive on port ${PORT}`));
@@ -33,11 +37,11 @@ app.listen(PORT, () => console.log(`Server is keeping bot alive on port ${PORT}`
 const ADMIN_NUMBER = '919341434302@s.whatsapp.net'; 
 const UPI_ID = '7633832024';
 const SESSION_FILE = './sessions.json';
-const TIMEOUT_MS = 10 * 60 * 1000; // 10 Minutes Session Timeout
+const TIMEOUT_MS = 10 * 60 * 1000; // 10 Minutes Timeout
 const BOT_NAME = 'Bihar Sathi AI';
 
 // ═════════════════════════════════════════════
-// 💾 SMART STATE MANAGEMENT
+// 💾 STATE MANAGEMENT
 // ═════════════════════════════════════════════
 let userSession = new Map();
 let intervalId = null;
@@ -57,9 +61,8 @@ function saveSessions() {
 }
 
 // ═════════════════════════════════════════════
-// 🎨 UI & UX ASSETS (PREMIUM DESIGN)
+// 🎨 UI & UX ASSETS (PREMIUM)
 // ═════════════════════════════════════════════
-
 const getTimeGreeting = () => {
     const hr = new Date().getHours();
     if (hr < 12) return "Good Morning ☀️";
@@ -195,7 +198,7 @@ const SERVICES = {
 };
 
 // ═════════════════════════════════════════════
-// 🔌 CONNECTION LOGIC (ZIP EDITION)
+// 🔌 CONNECTION LOGIC
 // ═════════════════════════════════════════════
 async function connectToWhatsApp() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
@@ -204,7 +207,7 @@ async function connectToWhatsApp() {
     const sock = makeWASocket({
         version,
         auth: state,
-        printQRInTerminal: false, // QR handled via Zip
+        printQRInTerminal: false,
         logger: pino({ level: 'silent' }),
         browser: ['Bihar-Sathi-Cloud', 'Chrome', '1.0.0'],
         keepAliveIntervalMs: 10000,
@@ -229,6 +232,7 @@ async function connectToWhatsApp() {
             if (shouldReconnect) setTimeout(connectToWhatsApp, 2000);
         } else if (connection === 'open') {
             console.log(`✅ ${BOT_NAME} IS ONLINE!`);
+            // Session Cleanup
             intervalId = setInterval(() => {
                 const now = Date.now();
                 userSession.forEach((session, jid) => {
