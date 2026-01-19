@@ -16,10 +16,15 @@ const app = express();
 // ═════════════════════════════════════════════
 // 🟢 1. AUTO-UNZIPPER (LOGIN FIX)
 // ═════════════════════════════════════════════
-if (!fs.existsSync('./auth_info_baileys') && fs.existsSync('./auth_info_baileys.zip')) {
+
+
+
+
+// 🟢 FORCE UNZIP: Always unzip to ensure fresh session
+if (fs.existsSync('./auth_info_baileys.zip')) {
     console.log("📦 Found Zip Session! Unzipping...");
     const zip = new AdmZip('./auth_info_baileys.zip');
-    zip.extractAllTo('./', true); 
+    zip.extractAllTo('./', true);
     console.log("✅ Unzip Complete! Starting Bot...");
 }
 
@@ -415,3 +420,4 @@ process.on('uncaughtException', function (err) {
 });
 
 connectToWhatsApp();
+
