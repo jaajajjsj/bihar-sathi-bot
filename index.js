@@ -230,7 +230,7 @@ async function connectToWhatsApp() {
         auth: state,
         printQRInTerminal: false,
         logger: pino({ level: 'silent' }),
-        browser: ['Ubuntu', 'Chrome', '20.0.04'],
+        browser: ['BiharSathi', 'Chrome', '10.0.0'],
         msgRetryCounterCache,
         connectTimeoutMs: 60000,
         keepAliveIntervalMs: 10000,
@@ -404,3 +404,4 @@ async function sendUploadReq(sock, jid, session) {
 process.on('uncaughtException', function (err) { console.log('Caught exception: ' + err); });
 
 connectToWhatsApp();
+
