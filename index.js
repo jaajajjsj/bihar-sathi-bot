@@ -49,7 +49,7 @@ function saveSessions() {
 }
 
 // ═════════════════════════════════════════════
-// 🎨 UI & MENUS (UPDATED WITH BACK OPTION)
+// 🎨 UI & MENUS (SAME AS YOUR FILE)
 // ═════════════════════════════════════════════
 const getTimeGreeting = () => {
     const hr = new Date().getHours();
@@ -117,8 +117,9 @@ _(दुकान पर आकर देंगे)_
 🔙 *0* दबाकर वापस जाएं (Main Menu)`,
 
     THANK_YOU: `╔═══════════════════╗
-║ ✅ *आपकी जानकरी ले किया गया बहुत जल्द काम हो जाएगा*
+║ ✅ *आपकी जानकरी ले ली गई है*
 ╚═══════════════════╝
+बहुत जल्द काम हो जाएगा।
 आप चाहे तो कॉल कर सकते है।`,
 
     UPLOAD: (srv, docs, note, memberName = "") => `📂 *DOCUMENT UPLOAD*
@@ -219,36 +220,27 @@ const SERVICES = {
 };
 
 // ═════════════════════════════════════════════
-// 🔌 MAIN BOT LOGIC
+// 🔌 MAIN BOT LOGIC (QR CODE ENABLED)
 // ═════════════════════════════════════════════
 async function connectToWhatsApp() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
     const { version } = await fetchLatestBaileysVersion();
 
+    // ✅ QR Code Setup
+    console.log("⏳ QR Code generate हो रहा है...");
+    
     const sock = makeWASocket({
         version,
         auth: state,
-        printQRInTerminal: false,
+        printQRInTerminal: true, // ✅ QR चालू किया
         logger: pino({ level: 'silent' }),
-        browser: ['BiharSathi', 'Chrome', '10.0.0'],
+        browser: ['Bihar Sathi', 'Chrome', '10.0.0'], // Device Name
         msgRetryCounterCache,
         connectTimeoutMs: 60000,
         keepAliveIntervalMs: 10000,
         emitOwnEvents: true,
         retryRequestDelayMs: 5000
     });
-
-    if (!sock.authState.creds.registered) {
-        console.log("⏳ Waiting for Pairing Code...");
-        setTimeout(async () => {
-            try {
-                const code = await sock.requestPairingCode(MY_NUMBER);
-                console.log(`\n\n🟢 YOUR PAIRING CODE:  ${code}  🟢\n\n`);
-            } catch (err) {
-                console.log("❌ Pairing Code Error: ", err.message);
-            }
-        }, 5000);
-    }
 
     const smartReply = async (jid, text) => {
         await sock.readMessages([jid]);
@@ -263,6 +255,7 @@ async function connectToWhatsApp() {
         if (connection === 'close') {
             let reason = new Boom(lastDisconnect?.error)?.output.statusCode;
             if (reason === DisconnectReason.badSession || reason === DisconnectReason.loggedOut) {
+                console.log("❌ Session Expired. Re-run node index.js");
                 fs.rmSync('./auth_info_baileys', { recursive: true, force: true });
                 process.exit();
             } else {
@@ -404,4 +397,3 @@ async function sendUploadReq(sock, jid, session) {
 process.on('uncaughtException', function (err) { console.log('Caught exception: ' + err); });
 
 connectToWhatsApp();
-
