@@ -13,22 +13,19 @@ const express = require('express');
 const app = express();
 
 // ═════════════════════════════════════════════
-// ⚙️ USER SETTINGS (PAIRING MODE)
+// ⚙️ USER SETTINGS
 // ═════════════════════════════════════════════
-// 👇 Ensure your number is correct here (Country code 91)
-const MY_NUMBER = "919341434302"; 
-
+const MY_NUMBER = "919341434302"; // आपका नंबर
 const ADMIN_NUMBER = `${MY_NUMBER}@s.whatsapp.net`; 
-const UPI_ID = '7633832024';
+const UPI_ID = '7633832024'; // आपकी UPI ID
 const BOT_NAME = 'Bihar Sathi AI';
 const SESSION_FILE = './sessions.json';
-const TIMEOUT_MS = 10 * 60 * 1000;
 
 // ═════════════════════════════════════════════
-// 🟢 SERVER KEEPER (24/7)
+// 🟢 SERVER KEEPER (24/7 AWS)
 // ═════════════════════════════════════════════
 const PORT = process.env.PORT || 3000;
-app.get('/', (req, res) => res.send('✅ Bihar Sathi Bot Running (Pairing Mode) 🚀'));
+app.get('/', (req, res) => res.send('✅ Bihar Sathi Bot Running 🚀'));
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 // ═════════════════════════════════════════════
@@ -52,7 +49,7 @@ function saveSessions() {
 }
 
 // ═════════════════════════════════════════════
-// 🎨 UI & UX ASSETS (FULL EXPERT MENU)
+// 🎨 UI & MENUS (UPDATED WITH BACK OPTION)
 // ═════════════════════════════════════════════
 const getTimeGreeting = () => {
     const hr = new Date().getHours();
@@ -67,48 +64,62 @@ const UI = {
 ╚═══════════════════╝
 👋 *${getTimeGreeting()}*
 
-आपका स्वागत है!
-आप *लिखकर* या *बोलकर (Voice Note)* अपनी बात बता सकते हैं। 🎤
-
-कृपया सेवा चुनें:
-╔══ *SERVICES* ══╗
+सेवा चुनें:
+╔══ *POPULAR SERVICES* ══╗
 ║ 1️⃣ 🆔 आधार कार्ड
 ║ 2️⃣ 💳 पैन कार्ड
-║ 3️⃣ 📜 आय / जाति
+║ 3️⃣ 📜 आय / जाति / आवासी
 ║ 4️⃣ 🍚 राशन कार्ड
-╚════════════════╝
+╚════════════════════╝
 
-╔══ *OPTIONS* ══╗
-║ 5️⃣ 💰 मूल्य (Rates)
-║ 6️⃣ 📞 सहायता (Help)
-╚════════════════╝
+╔══ *OTHER SERVICES* ══╗
+║ 8️⃣ 👵 वृद्धा पेंशन (Pension)
+║ 9️⃣ 👷 ई-श्रम कार्ड (e-Shram)
+╚════════════════════╝
 
-👉 _सेवा चुनने के लिए **1-6** लिखें_`,
+╔══ *HELP* ══╗
+║ 🔟 💰 रेट लिस्ट (Rates)
+║ 📞 *0* दबाकर कॉल रिक्वेस्ट करें
+╚════════════════════╝
+
+👉 _सेवा चुनने के लिए **1-4** या **8-10** लिखें_`,
 
     RATE_LIST: `╔═══════════════════╗
 ║ 💰 *OFFICIAL RATE LIST*
 ╚═══════════════════╝
-🔹 *आधार अपडेट:* ₹170
+🔹 *आधार अपडेट:* ₹160
 🔹 *पैन कार्ड:* ₹180
-🔹 *प्रमाण पत्र:* ₹50
-🔹 *राशन कार्ड:* ₹150
-🔹 *प्रिंट आउट:* ₹5/page
+🔹 *आय / जाति /आवासी :* ₹50
+🔹 *राशन कार्ड:* ₹100 - ₹150
+🔹 *वृद्धा पेंशन (Pension) /e-Shram:* 100
+🔹 *प्रिंट आउट:* ₹3/page
 
 🔙 *0* दबाकर वापस जाएं`,
 
     PAYMENT: (orderId) => `╔═══════════════════╗
-║ 🧾 *PAYMENT INVOICE*
+║ 🧾 *PAYMENT MODE*
 ╚═══════════════════╝
 🆔 *Order ID:* \`${orderId}\`
-💠 *UPI ID:* \`${UPI_ID}\`
 
-👇 *NEXT STEP:*
-Payment का **Screenshot** भेजें।`,
+पैसे कैसे देंगे?
+
+1️⃣ *ONLINE (UPI):*
+💠 UPI ID: \`${UPI_ID}\`
+_(Payment करके Screenshot भेजें)_
+
+2️⃣ *CASH (नकद):*
+_(दुकान पर आकर देंगे)_
+
+👇 *Instructions:*
+अगर **Online** किया है तो **फोटो** भेजें।
+अगर **Cash** देंगे तो बस **CASH** लिखें।
+
+🔙 *0* दबाकर वापस जाएं (Main Menu)`,
 
     THANK_YOU: `╔═══════════════════╗
-║ ✅ *ORDER CONFIRMED*
+║ ✅ *आपकी जानकरी ले किया गया बहुत जल्द काम हो जाएगा*
 ╚═══════════════════╝
-धन्यवाद! आपका ऑर्डर ले लिया गया है।`,
+आप चाहे तो कॉल कर सकते है।`,
 
     UPLOAD: (srv, docs, note, memberName = "") => `📂 *DOCUMENT UPLOAD*
 ───────────────────────
@@ -120,7 +131,9 @@ ${docs}
 ${note}
 
 🎤 *नोट:* आप बोलकर भी बता सकते हैं।
-✅ भेजने के बाद *DONE* लिखें।`,
+✅ भेजने के बाद *DONE* लिखें।
+
+🔙 *0* दबाकर वापस जाएं (Main Menu)`,
 
     ASK_NAME: (action) => `👤 *MEMBER NAME*
 ───────────────────────
@@ -132,64 +145,81 @@ ${note}
 ───────────────────────
 हमने आपकी आवाज़ सुन ली है!
 आपका मैसेज एडमिन को भेज दिया गया है।
-वे सुनकर जल्द ही जवाब देंगे।`,
-
-    TIMEOUT: "⚠️ *Session Expired*\nदुबारा शुरू करने के लिए *Hi* लिखें."
+वे सुनकर जल्द ही जवाब देंगे।`
 };
 
 // ═════════════════════════════════════════════
-// 🧠 SERVICE LOGIC
+// 🧠 SERVICE LOGIC (BIHAR SPECIAL)
 // ═════════════════════════════════════════════
 const SERVICES = {
     '1': {
         key: 'AADHAAR',
-        title: 'आधार कार्ड',
+        title: 'आधार कार्ड सुधार',
         menu: `🆔 *आधार कार्ड सेवा*
 ──────────────────
-1️⃣ पता अपडेट (Address)
-2️⃣ पिता का नाम (Father Name)
-3️⃣ पति का नाम (Husband Name)
+1️⃣ पता अपडेट (Address Update)
+2️⃣ नाम/जन्म तिथि (Name/DOB)
+3️⃣ डॉक्यूमेंट अपडेट (Doc Update)
 0️⃣ Go Back`,
-        req: ["🔹 आधार कार्ड (Original)", "🔹 आवासीय प्रमाण पत्र"],
+        req: ["🔹 पुराना आधार कार्ड", "🔹 आवासी", "🔹आधार से जुदा हुवा मोबाइल नंबर "],
         note: "\n⚠️ *Note:* OTP के लिए तैयार रहें।"
     },
     '2': {
         key: 'PAN',
-        title: 'पैन कार्ड',
+        title: 'पैन कार्ड अप्लाई',
         menu: `💳 *पैन कार्ड सेवा*
 ──────────────────
-1️⃣ नाम सुधार (Name Correction)
-2️⃣ जन्म तिथि (DOB Update)
-3️⃣ नया पैन (New Apply)
+1️⃣ नया पैन कार्ड (New Apply)
+2️⃣ पैन सुधार (Correction)
+3️⃣ पैन-आधार लिंक (Link)
 0️⃣ Go Back`,
-        req: ["🔹 आधार कार्ड", "🔹 फोटो", "🔹 साइन"]
+        req: ["🔹 आधार कार्ड (दोनों साइड)", "🔹 2 पासपोर्ट साइज फोटो", "🔹 सादा कागज पर Sign", "🔹 मोबाइल नंबर"]
     },
     '3': {
         key: 'CERT',
-        title: 'प्रमाण पत्र',
-        menu: `📜 *प्रमाण पत्र सेवा*
+        title: 'RTPS (आय/जाति/निवास)',
+        menu: `📜 *बिहार RTPS सेवा*
 ──────────────────
-1️⃣ आय प्रमाण पत्र
-2️⃣ जाति प्रमाण पत्र
-3️⃣ आवासीय प्रमाण पत्र
+1️⃣ आय प्रमाण पत्र (Income)
+2️⃣ जाति प्रमाण पत्र (Caste)
+3️⃣ आवासीय प्रमाण पत्र (Residence)
 0️⃣ Go Back`,
-        req: ["🔹 फोटो", "🔹 आधार कार्ड", "🔹 पुराना प्रमाण (यदि है)"]
+        req: ["🔹 आधार कार्ड (दोनों साइड)", "🔹 एक फोटो", "🔹 मोबाइल नंबर","🔹 सादा कागज पर Sign", "🔹 जाती के लिए-- पुराना जाती डाले, घर में किसी का, नहीं तो कॉल करे) "]
     },
     '4': {
         key: 'RATION',
-        title: 'राशन कार्ड',
-        menu: `🍚 *राशन कार्ड सेवा*
+        title: 'राशन कार्ड (Bihar)',
+        menu: `🍚 *बिहार राशन कार्ड*
 ──────────────────
-1️⃣ नया आवेदन (New Application)
-2️⃣ सदस्य जोड़ें (Add Member)
-3️⃣ सदस्य हटाएं (Remove Member)
+1️⃣ नया राशन कार्ड (New Card)
+2️⃣ नाम जोड़ें (Add Member)
+3️⃣ नाम हटाए (Delete Member)
 0️⃣ Go Back`,
-        req: ["🔹 मुखिया का आधार", "🔹 बैंक खाता", "🔹 सभी सदस्यों का आधार", "🔹 फोटो"]
+        req: ["🔹 मुखिया (महिला) का आधार", "🔹 बैंक पासबुक", "🔹 आय, जाति, निवास", "🔹 पूरे परिवार का फोटो", "🔹 सभी का आधार", "🔹 सादा कागज पर Sign"]
+    },
+    '8': {
+        key: 'PENSION',
+        title: 'वृद्धा पेंशन (Pension)',
+        menu: `👵 *वृद्धा पेंशन सेवा*
+──────────────────
+1️⃣ नया आवेदन (New Apply)
+0️⃣ Go Back`,
+        req: ["🔹 आधार कार्ड", "🔹 पहचान पत्र (Voter ID)", "🔹 बैंक पासबुक", "🔹 फोटो", "🔹 हस्ताक्षर (Sign)"]
+    },
+    '9': {
+        key: 'ESHRAM',
+        title: 'ई-श्रम कार्ड (e-Shram)',
+        menu: `👷 *ई-श्रम कार्ड सेवा*
+──────────────────
+1️⃣ नया कार्ड (New Apply)
+2️⃣ अपडेट/डाउनलोड
+0️⃣ Go Back`,
+        req: ["🔹 आधार कार्ड", "🔹 बैंक पासबुक", "🔹 मोबाइल नंबर"]
     }
 };
 
 // ═════════════════════════════════════════════
-// 🔌 CONNECTION LOGIC (PAIRING CODE + ANTI-CRASH)
+// 🔌 MAIN BOT LOGIC
 // ═════════════════════════════════════════════
 async function connectToWhatsApp() {
     const { state, saveCreds } = await useMultiFileAuthState('auth_info_baileys');
@@ -198,24 +228,22 @@ async function connectToWhatsApp() {
     const sock = makeWASocket({
         version,
         auth: state,
-        printQRInTerminal: false, // 🔴 QR DISABLED
+        printQRInTerminal: false,
         logger: pino({ level: 'silent' }),
-        browser: ['Ubuntu', 'Chrome', '20.0.04'], // Linux Browser for Render
-        msgRetryCounterCache, // Prevents Crash
+        browser: ['Ubuntu', 'Chrome', '20.0.04'],
+        msgRetryCounterCache,
         connectTimeoutMs: 60000,
         keepAliveIntervalMs: 10000,
         emitOwnEvents: true,
         retryRequestDelayMs: 5000
     });
 
-    // 🟢 GENERATE PAIRING CODE
     if (!sock.authState.creds.registered) {
         console.log("⏳ Waiting for Pairing Code...");
         setTimeout(async () => {
             try {
                 const code = await sock.requestPairingCode(MY_NUMBER);
-                console.log(`\n\n🟢 🟢 🟢 YOUR PAIRING CODE:  ${code}  🟢 🟢 🟢\n\n`);
-                console.log(`⚠️ (Logs में यह Code सिर्फ एक बार दिखेगा, जल्दी नोट करें!)\n`);
+                console.log(`\n\n🟢 YOUR PAIRING CODE:  ${code}  🟢\n\n`);
             } catch (err) {
                 console.log("❌ Pairing Code Error: ", err.message);
             }
@@ -234,20 +262,14 @@ async function connectToWhatsApp() {
         const { connection, lastDisconnect } = update;
         if (connection === 'close') {
             let reason = new Boom(lastDisconnect?.error)?.output.statusCode;
-            if (reason === DisconnectReason.badSession) {
-                console.log(`❌ Bad Session - Deleting...`);
-                fs.rmSync('./auth_info_baileys', { recursive: true, force: true });
-                process.exit();
-            } else if (reason === DisconnectReason.loggedOut) {
-                console.log(`❌ Logged Out - Deleting Session...`);
+            if (reason === DisconnectReason.badSession || reason === DisconnectReason.loggedOut) {
                 fs.rmSync('./auth_info_baileys', { recursive: true, force: true });
                 process.exit();
             } else {
-                console.log("⚠️ Connection Closed, Reconnecting...");
                 connectToWhatsApp();
             }
         } else if (connection === 'open') {
-            console.log(`✅ ${BOT_NAME} IS ONLINE & STABLE!`);
+            console.log(`✅ ${BOT_NAME} IS ONLINE!`);
             setInterval(() => saveSessions(), 60000);
         }
     });
@@ -264,11 +286,10 @@ async function connectToWhatsApp() {
                 const textBody = (msg.message.conversation || msg.message.extendedTextMessage?.text || "").trim();
                 const lowerText = textBody.toLowerCase();
 
-                // 🎙️ VOICE HANDLING
                 if (msg.message.audioMessage) {
                     await smartReply(remoteJid, UI.VOICE_RECEIVED);
                     await sock.sendMessage(ADMIN_NUMBER, { 
-                        text: `🎤 *VOICE RECEIVED* from +${remoteJid.split('@')[0]}\n(Check chat list)` 
+                        text: `🎤 *VOICE RECEIVED* from +${remoteJid.split('@')[0]}` 
                     });
                     return;
                 }
@@ -287,7 +308,6 @@ async function connectToWhatsApp() {
                     return;
                 }
 
-                // MENU LOGIC
                 switch (session.step) {
                     case 'MAIN_MENU':
                         if (SERVICES[textBody]) {
@@ -302,34 +322,23 @@ async function connectToWhatsApp() {
                                 await sendUploadReq(sock, remoteJid, session);
                             }
                         }
-                        else if (textBody === '5') await smartReply(remoteJid, UI.RATE_LIST);
-                        else if (textBody === '6') {
-                            await smartReply(remoteJid, "📞 *Call Request Sent!*\nAn executive will call you shortly.");
+                        else if (textBody === '10' || lowerText.includes('rate')) await smartReply(remoteJid, UI.RATE_LIST);
+                        else if (lowerText.includes('call')) {
+                            await smartReply(remoteJid, "📞 *Call Request Sent!*");
                             await sock.sendMessage(ADMIN_NUMBER, { text: `🚨 CALL REQUEST: ${remoteJid.split('@')[0]}` });
                         }
-                        else if (textBody.length > 0) await smartReply(remoteJid, "❌ गलत विकल्प। कृपया 1-6 चुनें।");
+                        else if (textBody.length > 0) await smartReply(remoteJid, "❌ गलत विकल्प। कृपया लिस्ट से चुनें।");
                         break;
 
                     case 'SUB_MENU':
                         if (textBody.length > 0) {
                             session.subService = textBody;
-
-                            if (session.service === 'RATION') {
-                                if (textBody === '2') { // Add
-                                    session.step = 'AWAITING_NAME';
-                                    session.serviceData.title = "Ration - Add Member";
-                                    await smartReply(remoteJid, UI.ASK_NAME('add'));
-                                    return;
-                                } 
-                                else if (textBody === '3') { // Remove
-                                    session.step = 'AWAITING_NAME';
-                                    session.serviceData.title = "Ration - Remove Member";
-                                    await smartReply(remoteJid, UI.ASK_NAME('remove'));
-                                    return;
-                                }
-                                else if (textBody === '1') {
-                                    session.serviceData.title = "Ration - New Application";
-                                }
+                            // Special Logic for Ration Add/Remove
+                            if (session.service === 'RATION' && (textBody === '2' || textBody === '3')) {
+                                session.step = 'AWAITING_NAME';
+                                session.serviceData.title = textBody === '2' ? "Ration - Add Member" : "Ration - Remove Member";
+                                await smartReply(remoteJid, UI.ASK_NAME());
+                                return;
                             }
                             session.step = 'DOCS';
                             await sendUploadReq(sock, remoteJid, session);
@@ -340,46 +349,45 @@ async function connectToWhatsApp() {
                         if (textBody.length > 0) {
                             session.memberName = textBody;
                             session.step = 'DOCS';
-
-                            if (session.serviceData.title.includes("Add")) {
-                                session.serviceData.req = ["🔹 राशन कार्ड", "🔹 सभी का आधार", "🔹 सभी की फोटो", "🔹 मुखिया का जाति, आवासी, आय", "🔹 हस्ताक्षर"];
-                            } else if (session.serviceData.title.includes("Remove")) {
-                                session.serviceData.req = ["🔹 राशन कार्ड", "🔹 सभी का आधार", "🔹 मुखिया का जाति, आवासी, आय", "🔹 हस्ताक्षर", "🔹 फोटो"];
-                            }
                             await sendUploadReq(sock, remoteJid, session);
                         }
                         break;
 
                     case 'DOCS':
-                        if (['done', 'pay', 'ok'].includes(lowerText)) {
+                        if (['done', 'pay', 'ok', 'bhej diya'].includes(lowerText)) {
                             session.orderId = 'CSC-' + Math.floor(1000 + Math.random() * 9000);
                             session.step = 'PAYMENT';
                             await smartReply(remoteJid, UI.PAYMENT(session.orderId));
                         } 
                         else if (msg.message.imageMessage || msg.message.documentMessage) {
-                            await sock.sendMessage(remoteJid, { text: "📥 *Document Received!* (Send more or type DONE)" });
+                            await sock.sendMessage(remoteJid, { text: "📥 *Document Received!* (और भेजें या DONE लिखें)" });
                         }
                         break;
 
                     case 'PAYMENT':
-                        if (msg.message.imageMessage) {
+                        if (msg.message.imageMessage) { // Online Payment
                             await smartReply(remoteJid, UI.THANK_YOU);
-                            const sName = session.serviceData?.title || "General";
-                            let alertMsg = `🚨 *NEW ORDER* 🚨\n\n🆔 ID: \`${session.orderId}\`\n👤 User: +${remoteJid.split('@')[0]}\n🛠 Service: ${sName}`;
-                            if(session.memberName) alertMsg += `\n🧑 Member Name: ${session.memberName}`;
+                            let alertMsg = `🚨 *ORDER (ONLINE)* 🚨\n🆔: \`${session.orderId}\`\n👤: +${remoteJid.split('@')[0]}\n🛠: ${session.serviceData?.title}`;
+                            if(session.memberName) alertMsg += `\n🧑 Name: ${session.memberName}`;
                             await sock.sendMessage(ADMIN_NUMBER, { text: alertMsg });
                             userSession.delete(remoteJid);
                             saveSessions();
-                        } else {
-                            await smartReply(remoteJid, "❌ Please send the *Payment Screenshot*.");
+                        } 
+                        else if (lowerText.includes('cash')) { // Cash Payment
+                            await smartReply(remoteJid, "✅ *Order Confirmed!* \nदुकान पर पेमेंट करें।");
+                            let alertMsg = `🚨 *ORDER (CASH)* 🚨\n🆔: \`${session.orderId}\`\n👤: +${remoteJid.split('@')[0]}\n🛠: ${session.serviceData?.title}\n💰: CASH Payment Pending`;
+                            if(session.memberName) alertMsg += `\n🧑 Name: ${session.memberName}`;
+                            await sock.sendMessage(ADMIN_NUMBER, { text: alertMsg });
+                            userSession.delete(remoteJid);
+                            saveSessions();
+                        }
+                        else {
+                            await smartReply(remoteJid, "❌ कृपया Screenshot भेजें या **CASH** लिखें।\n🔙 *0* दबाकर वापस जाएं।");
                         }
                         break;
                 }
             } catch (err) {
                 console.error("Bot Error:", err);
-                if (userSession.has(msg.key.remoteJid)) {
-                   userSession.get(msg.key.remoteJid).step = 'MAIN_MENU';
-                }
             }
         }
     });
@@ -393,9 +401,6 @@ async function sendUploadReq(sock, jid, session) {
     await sock.sendMessage(jid, { text: UI.UPLOAD(d.title, d.req.join("\n"), d.note || "", session.memberName) });
 }
 
-// 🔴 GLOBAL ERROR HANDLER
-process.on('uncaughtException', function (err) {
-    console.log('Caught exception: ' + err);
-});
+process.on('uncaughtException', function (err) { console.log('Caught exception: ' + err); });
 
 connectToWhatsApp();
